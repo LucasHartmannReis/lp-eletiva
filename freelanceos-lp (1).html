@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreelanceOS — O sistema operacional do dev freelancer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg:       #080c10;
+  --bg-2:     #0d1117;
+  --bg-3:     #111820;
+  --text:     #f0f4f8;
+  --muted:    rgba(240,244,248,0.5);
+  --dim:      rgba(240,244,248,0.26);
+  --accent:   #00e5a0;
+  --accent-2: #00b8ff;
+  --glass:      rgba(255,255,255,0.04);
+  --glass-b:    rgba(255,255,255,0.08);
+  --glass-b-hi: rgba(255,255,255,0.13);
+  --blur-md: blur(16px);
+  --blur-lg: blur(28px);
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --ease:   cubic-bezier(0.4,0,0.2,1);
+  --spring: cubic-bezier(0.34,1.56,0.64,1);
+
+  /* Button system tokens */
+  --btn-h:   44px;
+  --btn-px:  1.5rem;
+  --btn-r:   6px;
+  --btn-fz:  0.875rem;
+  --btn-fw:  600;
+  --btn-t:   background 0.18s var(--ease), box-shadow 0.18s var(--ease),
+             transform 0.16s var(--ease), border-color 0.18s var(--ease),
+             color 0.18s var(--ease);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg); color: var(--text);
+  overflow-x: hidden; line-height: 1.6;
+}
+
+/* ─── BLOBS ─── */
+.scene { position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden; }
+.blob  { position:absolute;border-radius:50%;filter:blur(90px);opacity:0.3;
+         animation:blob-drift var(--dur,20s) ease-in-out infinite alternate; }
+.blob-1{ width:600px;height:600px;background:radial-gradient(circle,#00e5a0,transparent 70%);top:-200px;left:-150px;--dur:22s; }
+.blob-2{ width:500px;height:500px;background:radial-gradient(circle,#00b8ff,transparent 70%);top:30%;right:-180px;--dur:18s; }
+.blob-3{ width:380px;height:380px;background:radial-gradient(circle,#7c3aed,transparent 70%);bottom:10%;left:20%;--dur:25s;opacity:0.16; }
+@keyframes blob-drift {
+  0%  {transform:translate(0,0)scale(1);}
+  33% {transform:translate(40px,-60px)scale(1.08);}
+  66% {transform:translate(-30px,30px)scale(0.94);}
+  100%{transform:translate(20px,-20px)scale(1.05);}
+}
+
+/* ─── LAYOUT ─── */
+.container {
+  max-width:min(90%,1160px);
+  margin-inline:auto;
+  padding-inline:clamp(1rem,5vw,2rem);
+  position:relative;z-index:1;
+}
+
+/* ─────────────────────────────────────────
+   BUTTON SYSTEM
+   Three variants: primary · outline · ghost
+   One size modifier: sm
+   One layout modifier: full
+   All share the same height, radius, font,
+   and transition — nothing overrides inline.
+───────────────────────────────────────── */
+.btn {
+  display:inline-flex;
+  align-items:center;justify-content:center;
+  height:var(--btn-h);
+  padding:0 var(--btn-px);
+  border-radius:var(--btn-r);
+  font-family:'DM Sans',sans-serif;
+  font-size:var(--btn-fz);
+  font-weight:var(--btn-fw);
+  letter-spacing:0.01em;
+  text-decoration:none;
+  cursor:pointer;
+  white-space:nowrap;
+  border:1px solid transparent;
+  transition:var(--btn-t);
+  line-height:1;
+  -webkit-font-smoothing:antialiased;
+}
+.btn:active { transform:translateY(1px)!important; }
+
+.btn-primary {
+  background:var(--accent);
+  color:#050a07;
+  border-color:var(--accent);
+}
+.btn-primary:hover {
+  background:#00ffb3;border-color:#00ffb3;
+  box-shadow:0 0 28px rgba(0,229,160,0.38);
+  transform:translateY(-1px);
+}
+
+.btn-outline {
+  background:transparent;
+  color:var(--text);
+  border-color:var(--glass-b-hi);
+}
+.btn-outline:hover {
+  border-color:rgba(255,255,255,0.28);
+  background:rgba(255,255,255,0.05);
+  transform:translateY(-1px);
+}
+
+.btn-ghost {
+  background:var(--glass);
+  color:var(--muted);
+  border-color:var(--glass-b);
+  backdrop-filter:var(--blur-md);
+}
+.btn-ghost:hover {
+  background:rgba(255,255,255,0.07);
+  border-color:var(--glass-b-hi);
+  color:var(--text);
+  transform:translateY(-1px);
+}
+
+.btn-sm  { height:34px;padding:0 1rem;font-size:0.78rem; }
+.btn-full{ width:100%; }
+
+/* ─── NAV ─── */
+nav {
+  position:fixed;top:0;left:0;right:0;
+  z-index:100;padding:1.1rem 0;
+  transition:background 0.4s var(--ease),backdrop-filter 0.4s;
+}
+nav.scrolled {
+  background:rgba(8,12,16,0.86);
+  backdrop-filter:var(--blur-md);-webkit-backdrop-filter:var(--blur-md);
+  border-bottom:1px solid var(--glass-b);
+}
+.nav-inner { display:flex;align-items:center;justify-content:space-between; }
+.logo {
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;
+  letter-spacing:-0.02em;display:flex;align-items:center;gap:0.45rem;
+  text-decoration:none;color:var(--text);
+}
+.logo-mark {
+  width:7px;height:7px;background:var(--accent);border-radius:50%;
+  box-shadow:0 0 10px var(--accent);
+  animation:pulse-mark 2s ease-in-out infinite;
+}
+@keyframes pulse-mark { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.6);} }
+.nav-links { display:flex;align-items:center;gap:2rem;list-style:none; }
+.nav-links a {
+  color:var(--muted);text-decoration:none;font-size:0.875rem;
+  font-weight:400;transition:color 0.2s;letter-spacing:0.01em;
+}
+.nav-links a:hover { color:var(--text); }
+
+/* ─── HERO ─── */
+.hero {
+  min-height:100svh;display:flex;align-items:center;
+  padding-top:6rem;padding-bottom:4rem;
+}
+.hero-inner {
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:4rem;align-items:center;
+}
+.hero-badge {
+  display:inline-flex;align-items:center;gap:0.45rem;
+  background:var(--glass);border:1px solid var(--glass-b-hi);
+  border-radius:4px;padding:0.3rem 0.85rem;
+  font-family:'DM Mono',monospace;font-size:0.72rem;
+  color:var(--accent);margin-bottom:1.5rem;
+  animation:fade-up 0.8s var(--spring) both;
+}
+.badge-dot { width:5px;height:5px;background:var(--accent);border-radius:50%;animation:pulse-mark 1.5s ease-in-out infinite; }
+.hero h1 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2.6rem,5.5vw,4.2rem);
+  font-weight:800;line-height:1.08;
+  letter-spacing:-0.04em;margin-bottom:1.4rem;
+  animation:fade-up 0.9s 0.1s var(--spring) both;
+}
+.hero h1 em {
+  font-style:normal;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub {
+  font-size:clamp(1rem,2vw,1.1rem);color:var(--muted);max-width:480px;
+  margin-bottom:2rem;line-height:1.75;font-weight:300;
+  animation:fade-up 1s 0.2s var(--spring) both;
+}
+.hero-actions {
+  display:flex;gap:0.7rem;flex-wrap:wrap;
+  animation:fade-up 1s 0.3s var(--spring) both;
+}
+.hero-stats {
+  display:flex;gap:2.5rem;margin-top:3rem;
+  animation:fade-up 1s 0.4s var(--spring) both;
+  padding-top:2rem;border-top:1px solid var(--glass-b);
+}
+.stat-num  { font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;display:block; }
+.stat-label{ font-family:'DM Mono',monospace;font-size:0.67rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em; }
+
+/* ─── MOCKUP ─── */
+.hero-visual { animation:fade-left 1s 0.2s var(--spring) both; }
+.mockup-shell {
+  background:var(--bg-2);border:1px solid var(--glass-b-hi);
+  border-radius:var(--r-xl);overflow:hidden;
+  box-shadow:0 40px 80px rgba(0,0,0,0.55),0 0 0 1px var(--glass-b);
+}
+.mockup-bar {
+  background:var(--bg-3);padding:0.65rem 1rem;
+  display:flex;align-items:center;gap:0.4rem;
+  border-bottom:1px solid var(--glass-b);
+}
+.dot{width:9px;height:9px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#ffbd2e;}.dot-g{background:#28c840;}
+.mockup-body{padding:1rem;}
+.mockup-tabs{display:flex;gap:0.3rem;margin-bottom:0.9rem;}
+.m-tab {
+  padding:0.26rem 0.7rem;border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:0.66rem;
+  cursor:pointer;transition:all 0.2s;
+  border:1px solid transparent;color:var(--dim);
+}
+.m-tab.active{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.22);color:var(--accent);}
+.mockup-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-bottom:0.65rem;}
+.m-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r-md);padding:0.8rem;}
+.m-label{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;}
+.m-val{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;}
+.m-val.g{color:var(--accent);}.m-val.b{color:var(--accent-2);}
+.m-sub{font-size:0.63rem;color:var(--dim);margin-top:0.15rem;}
+.m-full{grid-column:1/-1;}
+.m-row{display:flex;align-items:center;justify-content:space-between;padding:0.44rem 0;border-bottom:1px solid var(--glass-b);}
+.m-row:last-child{border-bottom:none;}
+.m-info{display:flex;align-items:center;gap:0.5rem;}
+.m-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:0.58rem;font-weight:700;flex-shrink:0;}
+.av-g{background:rgba(0,229,160,.16);color:var(--accent);}
+.av-b{background:rgba(0,184,255,.16);color:var(--accent-2);}
+.av-p{background:rgba(124,58,237,.16);color:#a78bfa;}
+.m-name{font-size:0.7rem;font-weight:500;}.m-proj{font-size:0.6rem;color:var(--dim);}
+.m-badge{font-family:'DM Mono',monospace;font-size:0.58rem;padding:0.16rem 0.48rem;border-radius:3px;}
+.b-active{background:rgba(0,229,160,.1);color:var(--accent);}
+.b-review{background:rgba(0,184,255,.1);color:var(--accent-2);}
+.b-pending{background:rgba(251,191,36,.1);color:#fbbf24;}
+
+/* ─── REVEAL ─── */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity 0.65s var(--ease),transform 0.65s var(--ease);}
+.reveal.visible{opacity:1;transform:none;}
+.d1{transition-delay:.08s;}.d2{transition-delay:.16s;}.d3{transition-delay:.24s;}
+@keyframes fade-up  {from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes fade-left{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+
+/* ─── SECTION COMMON ─── */
+section{padding:clamp(4rem,8vw,7rem) 0;position:relative;z-index:1;}
+.tag{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:0.7rem;display:block;}
+.title{font-family:'Syne',sans-serif;font-size:clamp(1.9rem,4vw,3rem);font-weight:800;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.9rem;}
+.sub{color:var(--muted);font-size:clamp(0.92rem,1.8vw,1.05rem);line-height:1.72;max-width:520px;font-weight:300;}
+.center{text-align:center;}.center .sub{margin-inline:auto;}
+
+/* ─── PROOF BAND ─── */
+.proof-band{background:rgba(0,229,160,0.025);border-top:1px solid rgba(0,229,160,0.07);border-bottom:1px solid rgba(0,229,160,0.07);padding:1.25rem 0;overflow:hidden;}
+.proof-track{display:flex;gap:3rem;animation:marquee 24s linear infinite;white-space:nowrap;}
+.proof-item{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;flex-shrink:0;display:flex;align-items:center;gap:1rem;}
+.proof-item::after{content:'·';color:var(--accent);}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ─── PROBLEM ─── */
+.problem-section{border-top:1px solid var(--glass-b);border-bottom:1px solid var(--glass-b);background:linear-gradient(180deg,transparent,rgba(255,255,255,0.01) 50%,transparent);}
+.chaos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:3rem;}
+.chaos-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r-lg);padding:1.5rem;backdrop-filter:var(--blur-md);transition:border-color 0.3s,transform 0.3s;position:relative;overflow:hidden;}
+.chaos-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.09),transparent);}
+.chaos-card:hover{border-color:var(--glass-b-hi);transform:translateY(-3px);}
+.chaos-card.bad{border-color:rgba(255,80,80,0.18);background:rgba(255,80,80,0.035);}
+.chaos-card.bad::before{background:linear-gradient(90deg,transparent,rgba(255,80,80,0.28),transparent);}
+.card-icon{width:34px;height:34px;margin-bottom:0.9rem;display:flex;align-items:center;justify-content:center;border-radius:7px;}
+.card-icon svg{width:17px;height:17px;}
+.ci-red{background:rgba(255,80,80,0.1);color:#ff6b6b;}
+.ci-green{background:rgba(0,229,160,0.1);color:var(--accent);}
+.ci-blue{background:rgba(0,184,255,0.1);color:var(--accent-2);}
+.ci-amber{background:rgba(251,191,36,0.1);color:#fbbf24;}
+.ci-purple{background:rgba(124,58,237,0.1);color:#a78bfa;}
+.ci-gray{background:rgba(255,255,255,0.06);color:var(--muted);}
+.chaos-card h3{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;margin-bottom:0.42rem;letter-spacing:-0.01em;}
+.chaos-card p{font-size:0.82rem;color:var(--muted);line-height:1.62;}
+
+/* ─── FEATURES ─── */
+.features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem;margin-top:3rem;}
+.feature-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r-xl);padding:1.7rem;backdrop-filter:var(--blur-md);transition:border-color 0.3s,box-shadow 0.3s,transform 0.3s;}
+.feature-card:hover{border-color:var(--glass-b-hi);transform:translateY(-3px);box-shadow:0 18px 36px rgba(0,0,0,0.32);}
+.feature-card.span2{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center;border-color:rgba(0,229,160,0.14);background:rgba(0,229,160,0.025);}
+.feature-card.span2:hover{border-color:rgba(0,229,160,0.26);}
+.feature-card.wide{grid-column:1/-1;}
+.f-icon{width:40px;height:40px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;}
+.f-icon svg{width:19px;height:19px;}
+.feature-card h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:0.48rem;letter-spacing:-0.02em;}
+.feature-card p{font-size:0.83rem;color:var(--muted);line-height:1.65;}
+.feat-list{list-style:none;margin-top:0.85rem;display:flex;flex-direction:column;gap:0.32rem;}
+.feat-list li{font-size:0.79rem;color:var(--muted);display:flex;align-items:center;gap:0.42rem;}
+.feat-list li::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.feat-list.row{flex-direction:row;flex-wrap:wrap;gap:0.45rem 2rem;}
+.code-block{background:var(--bg-3);border:1px solid var(--glass-b);border-radius:var(--r-md);padding:1.1rem;font-family:'DM Mono',monospace;font-size:0.69rem;color:var(--muted);line-height:1.88;}
+.c-g{color:var(--accent);}.c-b{color:var(--accent-2);}.c-d{color:var(--dim);}
+
+/* ─── PRICING ─── */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;max-width:780px;margin:3rem auto 0;}
+.price-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r-xl);padding:1.7rem;backdrop-filter:var(--blur-md);transition:transform 0.3s,border-color 0.3s;}
+.price-card:hover{transform:translateY(-3px);}
+.price-card.pro{border-color:rgba(0,229,160,0.2);background:rgba(0,229,160,0.03);position:relative;overflow:hidden;}
+.price-card.pro::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-2));}
+.price-badge{display:inline-block;background:rgba(0,229,160,0.1);color:var(--accent);font-family:'DM Mono',monospace;font-size:0.6rem;padding:0.17rem 0.52rem;border-radius:3px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.9rem;border:1px solid rgba(0,229,160,0.18);}
+.price-plan{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:0.45rem;}
+.price-amount{font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;letter-spacing:-0.04em;line-height:1;margin-bottom:0.28rem;}
+.price-amount span{font-size:0.9rem;font-weight:400;color:var(--muted);letter-spacing:0;}
+.price-desc{font-size:0.78rem;color:var(--dim);margin-bottom:1.3rem;line-height:1.5;}
+.price-items{list-style:none;display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.5rem;}
+.price-items li{font-size:0.81rem;color:var(--muted);display:flex;align-items:flex-start;gap:0.5rem;}
+.ck{font-size:0.78rem;flex-shrink:0;line-height:1.5;}.ck-on{color:var(--accent);}.ck-off{color:var(--dim);}
+.price-note{text-align:center;font-size:0.73rem;color:var(--dim);margin-top:1.1rem;font-family:'DM Mono',monospace;}
+
+/* ─── CTA ─── */
+.cta-box{background:var(--glass);border:1px solid var(--glass-b-hi);border-radius:var(--r-xl);padding:clamp(3rem,6vw,5rem);text-align:center;backdrop-filter:var(--blur-lg);position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,160,0.4),rgba(0,184,255,0.35),transparent);}
+.cta-box h2{font-family:'Syne',sans-serif;font-size:clamp(2rem,4.5vw,3.2rem);font-weight:800;letter-spacing:-0.04em;margin-bottom:0.85rem;line-height:1.1;}
+.cta-box p{color:var(--muted);font-size:1rem;margin-bottom:1.8rem;font-weight:300;}
+.cta-row{display:flex;gap:0.6rem;max-width:440px;margin-inline:auto;flex-wrap:wrap;justify-content:center;}
+.email-input{flex:1;min-width:190px;height:var(--btn-h);background:rgba(255,255,255,0.055);border:1px solid var(--glass-b-hi);border-radius:var(--btn-r);padding:0 1.2rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.875rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+.email-input::placeholder{color:var(--dim);}
+.email-input:focus{border-color:rgba(0,229,160,0.32);box-shadow:0 0 0 3px rgba(0,229,160,0.07);}
+
+/* ─── FOOTER ─── */
+footer{border-top:1px solid var(--glass-b);padding:2.2rem 0;position:relative;z-index:1;}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.footer-copy{font-size:0.73rem;color:var(--dim);font-family:'DM Mono',monospace;}
+.footer-links{display:flex;gap:1.4rem;list-style:none;}
+.footer-links a{font-size:0.73rem;color:var(--dim);text-decoration:none;transition:color 0.2s;}
+.footer-links a:hover{color:var(--muted);}
+.divider{width:100%;height:1px;position:relative;z-index:1;background:linear-gradient(90deg,transparent,var(--glass-b),transparent);}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  .hero-inner,.feature-card.span2{grid-template-columns:1fr;}
+  .hero-visual,.chaos-grid{display:none;}
+  .features-grid,.pricing-grid{grid-template-columns:1fr;}
+  .nav-links{display:none;}
+  .hero-stats{gap:1.4rem;}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}
+}
+</style>
+</head>
+<body>
+
+<div class="scene" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="logo"><span class="logo-mark"></span>FreelanceOS</a>
+      <ul class="nav-links">
+        <li><a href="#problema">O problema</a></li>
+        <li><a href="#funcionalidades">Funcionalidades</a></li>
+        <li><a href="#precos">Preços</a></li>
+        <li><a href="#comecar" class="btn btn-primary btn-sm">Começar grátis</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge"><span class="badge-dot"></span>Feito para devs brasileiros</div>
+        <h1>O sistema operacional do seu <em>freela</em></h1>
+        <p class="hero-sub">Chega de WhatsApp, planilha e Notion separados. FreelanceOS unifica gestão de clientes, tempo, comunicação e fiscal — em um único lugar, feito para a realidade do dev autônomo no Brasil.</p>
+        <div class="hero-actions">
+          <a href="#comecar" class="btn btn-primary">Começar grátis</a>
+          <a href="#funcionalidades" class="btn btn-outline">Ver funcionalidades</a>
+        </div>
+        <div class="hero-stats">
+          <div><span class="stat-num">+25M</span><span class="stat-label">autônomos no BR</span></div>
+          <div><span class="stat-num">R$ 0</span><span class="stat-label">para começar</span></div>
+          <div><span class="stat-num">4-em-1</span><span class="stat-label">módulos integrados</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="mockup-shell">
+          <div class="mockup-bar">
+            <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-tabs">
+              <div class="m-tab active">CRM</div>
+              <div class="m-tab">Timer</div>
+              <div class="m-tab">Fiscal</div>
+              <div class="m-tab">Chat</div>
+            </div>
+            <div class="mockup-grid">
+              <div class="m-card"><div class="m-label">Receita do mês</div><div class="m-val g">R$ 12.400</div><div class="m-sub">+18% vs mês anterior</div></div>
+              <div class="m-card"><div class="m-label">Horas faturáveis</div><div class="m-val b">143h</div><div class="m-sub">de 160h disponíveis</div></div>
+              <div class="m-card m-full">
+                <div class="m-label">Clientes ativos</div>
+                <div class="m-row"><div class="m-info"><div class="m-av av-g">FC</div><div><div class="m-name">Fintech Corp</div><div class="m-proj">API de pagamentos</div></div></div><span class="m-badge b-active">Ativo</span></div>
+                <div class="m-row"><div class="m-info"><div class="m-av av-b">SL</div><div><div class="m-name">StartupLab</div><div class="m-proj">Dashboard admin</div></div></div><span class="m-badge b-review">Em revisão</span></div>
+                <div class="m-row"><div class="m-info"><div class="m-av av-p">ME</div><div><div class="m-name">MercadoE</div><div class="m-proj">Integração ERP</div></div></div><span class="m-badge b-pending">NF pendente</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<div class="proof-band">
+  <div class="proof-track">
+    <span class="proof-item">Gestão de clientes</span><span class="proof-item">Controle de horas</span><span class="proof-item">NF-e MEI integrada</span><span class="proof-item">Fluxo de caixa</span><span class="proof-item">Contratos digitais</span><span class="proof-item">Follow-up automático</span><span class="proof-item">Relatórios de escopo</span><span class="proof-item">Gestão de clientes</span><span class="proof-item">Controle de horas</span><span class="proof-item">NF-e MEI integrada</span><span class="proof-item">Fluxo de caixa</span><span class="proof-item">Contratos digitais</span><span class="proof-item">Follow-up automático</span><span class="proof-item">Relatórios de escopo</span>
+  </div>
+</div>
+
+<!-- PROBLEMA -->
+<section id="problema" class="problem-section">
+  <div class="container">
+    <div class="reveal">
+      <span class="tag">O problema</span>
+      <h2 class="title">Você cobra por código.<br>Perde dinheiro na gestão.</h2>
+      <p class="sub">Todo dev freelancer enfrenta o mesmo caos operacional — e nenhuma ferramenta existente foi construída para resolver isso de verdade.</p>
+    </div>
+    <div class="chaos-grid">
+      <div class="chaos-card reveal d1">
+        <div class="card-icon ci-gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>Negociação no WhatsApp</h3>
+        <p>Escopo, prazo e valor combinados em conversa informal. Quando o cliente muda de ideia, não há como provar o que foi acordado.</p>
+      </div>
+      <div class="chaos-card bad reveal d2">
+        <div class="card-icon ci-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <h3>Horas perdidas no chute</h3>
+        <p>Sem controle de tempo real, você entrega mais do que cobrou. Cada hora extra não registrada sai direto do seu bolso.</p>
+      </div>
+      <div class="chaos-card reveal d3">
+        <div class="card-icon ci-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <h3>NF emitida no último segundo</h3>
+        <p>Nota fiscal de serviço fora do prazo gera multa. Você ainda precisa lembrar sozinho do vencimento de cada cliente.</p>
+      </div>
+      <div class="chaos-card reveal">
+        <div class="card-icon ci-gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <h3>Financeiro numa planilha</h3>
+        <p>Excel não avisa quando um cliente está em atraso. Você descobre o calote quando o prazo de cobrança amigável já passou.</p>
+      </div>
+      <div class="chaos-card reveal d1">
+        <div class="card-icon ci-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+        <h3>5 ferramentas, zero integração</h3>
+        <p>Notion, Trello, Toggl, Excel e Drive separados. O tempo alternando entre eles é tempo que você não cobrou.</p>
+      </div>
+      <div class="chaos-card reveal d2">
+        <div class="card-icon ci-gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Sem previsibilidade de receita</h3>
+        <p>Você não sabe quanto vai entrar no próximo mês. Isso te força a aceitar projetos ruins só para não ficar sem renda.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="funcionalidades">
+  <div class="container">
+    <div class="reveal center">
+      <span class="tag">Funcionalidades</span>
+      <h2 class="title">Tudo que você precisa.<br>Em um só lugar.</h2>
+      <p class="sub">Quatro módulos integrados que eliminam o caos e colocam você no controle da sua operação.</p>
+    </div>
+    <div class="features-grid">
+
+      <div class="feature-card span2 reveal">
+        <div>
+          <div class="f-icon ci-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h3>CRM de Clientes</h3>
+          <p>Histórico completo de cada cliente — projetos, conversas, valores, status e próximos passos em um único perfil centralizado.</p>
+          <ul class="feat-list">
+            <li>Pipeline visual de oportunidades</li>
+            <li>Histórico de projetos e valores pagos</li>
+            <li>Alertas de follow-up por cliente</li>
+            <li>Armazenamento de contratos e escopo aprovado</li>
+          </ul>
+        </div>
+        <div class="code-block">
+          <div class="c-g">cliente: Fintech Corp</div>
+          <div class="c-d">// projetos: 3 &nbsp;|&nbsp; total pago: R$ 28.400</div>
+          <br>
+          <div class="c-b">&nbsp;&nbsp;status: "ativo"</div>
+          <div>&nbsp;&nbsp;próximo_contato: "15 jan"</div>
+          <div>&nbsp;&nbsp;escopo_aprovado: "API_v2.pdf"</div>
+          <br>
+          <div class="c-g">→ follow-up em 3 dias</div>
+        </div>
+      </div>
+
+      <div class="feature-card reveal d1">
+        <div class="f-icon ci-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <h3>Gestão de Tempo</h3>
+        <p>Timer nativo por projeto com relatórios automáticos. Saiba exatamente quantas horas cada cliente consumiu e justifique cobranças extras com dados reais.</p>
+        <ul class="feat-list">
+          <li>Timer start/stop por projeto</li>
+          <li>Relatório de horas exportável</li>
+          <li>Alerta de estouro de escopo</li>
+        </ul>
+      </div>
+
+      <div class="feature-card reveal d2">
+        <div class="f-icon ci-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>Comunicação Formal</h3>
+        <p>Registre aprovações de escopo, mudanças de requisito e acordos de prazo de forma rastreável. Nenhuma decisão fica só no WhatsApp.</p>
+        <ul class="feat-list">
+          <li>Log de decisões por projeto</li>
+          <li>Aprovação de escopo com carimbo de data</li>
+          <li>Templates de mensagem para cliente</li>
+        </ul>
+      </div>
+
+      <div class="feature-card wide reveal d1">
+        <div class="f-icon ci-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <h3>Fiscal &amp; Financeiro</h3>
+        <p>Controle de cobranças, agenda de NF e fluxo de caixa — adaptado para MEI e autônomo brasileiro. Sem contador, sem planilha.</p>
+        <ul class="feat-list row">
+          <li>Agenda de NF por cliente e data</li>
+          <li>Fluxo de caixa mensal automático</li>
+          <li>Alertas de inadimplência</li>
+          <li>Histórico de pagamentos recebidos</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section id="precos">
+  <div class="container">
+    <div class="reveal center">
+      <span class="tag">Preços</span>
+      <h2 class="title">Simples. Sem pegadinha.</h2>
+      <p class="sub">Comece grátis e faça upgrade quando precisar. Se economizar 1 hora por mês, o plano Pro já se pagou.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card reveal">
+        <div class="price-plan">Free</div>
+        <div class="price-amount">R$ 0<span>/mês</span></div>
+        <p class="price-desc">Para começar a organizar sua operação sem gastar nada.</p>
+        <ul class="price-items">
+          <li><span class="ck ck-on">✓</span> Até 2 clientes ativos</li>
+          <li><span class="ck ck-on">✓</span> Timer básico</li>
+          <li><span class="ck ck-on">✓</span> CRM simplificado</li>
+          <li><span class="ck ck-off">✗</span><span style="color:var(--dim)">Módulo fiscal</span></li>
+          <li><span class="ck ck-off">✗</span><span style="color:var(--dim)">Relatórios completos</span></li>
+          <li><span class="ck ck-off">✗</span><span style="color:var(--dim)">Modelos de contrato</span></li>
+        </ul>
+        <a href="#comecar" class="btn btn-ghost btn-full">Criar conta grátis</a>
+      </div>
+      <div class="price-card pro reveal d1">
+        <div class="price-badge">Mais popular</div>
+        <div class="price-plan">Pro</div>
+        <div class="price-amount">R$ 49<span>/mês</span></div>
+        <p class="price-desc">Tudo que você precisa para operar como um profissional.</p>
+        <ul class="price-items">
+          <li><span class="ck ck-on">✓</span> Clientes ilimitados</li>
+          <li><span class="ck ck-on">✓</span> Timer completo + exportação</li>
+          <li><span class="ck ck-on">✓</span> CRM completo com pipeline</li>
+          <li><span class="ck ck-on">✓</span> Módulo fiscal (NF, fluxo de caixa)</li>
+          <li><span class="ck ck-on">✓</span> Relatórios em PDF</li>
+          <li><span class="ck ck-on">✓</span> Modelos de contrato</li>
+        </ul>
+        <a href="#comecar" class="btn btn-primary btn-full">14 dias grátis — sem cartão</a>
+      </div>
+    </div>
+    <p class="price-note reveal">Cancele quando quiser. Sem fidelidade, sem multa.</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="comecar">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2>Pare de trabalhar mais<br>do que você cobra.</h2>
+      <p>Comece hoje. Menos de 2 minutos para criar sua conta.</p>
+      <div class="cta-row">
+        <input type="email" class="email-input" placeholder="seu@email.com">
+        <a href="#" class="btn btn-primary">Criar conta grátis</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <span class="footer-copy">© 2025 FreelanceOS · Feito para devs brasileiros</span>
+      <ul class="footer-links">
+        <li><a href="#">Privacidade</a></li>
+        <li><a href="#">Termos</a></li>
+        <li><a href="#">Contato</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 40);
+});
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+document.querySelectorAll('.m-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const t = document.querySelector(a.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+</script>
+</body>
+</html>
